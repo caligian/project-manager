@@ -43,6 +43,7 @@ function Runner:make_command(display, additional_args)
   local name = self.name
   local final = {self.path}
   local maxwidth = math.max(unpack(list.map(
+    ---@diagnostic disable-next-line
     display, function (line) return #line end
   )))
   maxwidth = maxwidth + 2
