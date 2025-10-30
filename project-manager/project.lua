@@ -1,33 +1,66 @@
 require 'lua-utils.utils'
 local class = require 'lua-utils.class'
 local list = require 'lua-utils.list'
-local copy = require 'lua-utils.copy'
 local dict = require 'lua-utils.dict'
 local path = require 'lua-utils.path_utils'
 local process = require 'lua-utils.process'
 local Fzf = require 'project-manager.fzf'
 local utils = require 'project-manager.utils'
-local home = os.getenv('HOME')
+
+---@class Selector
+---@field cmd string
+---@field args string
+
+---@class ProjectConfig
+---@field selector? Selector
+---@field editor? string
+---@field write_on_append? boolean
+---@field terminal? string
+---@field file_browser? string
 
 ---@class Project
+---@field description string
+---@field desc string
+---@field name string
+---@field path string
+---@field dir string
+---@field directory string
+---@field dirname string
+---@field files string[]
+---@field config_path string
+---@field config ProjectConfig
+---@field fzf Fzf
+---@overload fun(directory: string, description: string, opts?: ProjectConfig)
 local Project = class 'Project'
 
-function Project:initialize(directory, description)
+function Project:initialize(
+  directory,
+  description,
+  opts
+)
+  opts = opts or {}
   self.description = description or false
   self.desc = self.description
   self.name = path.basename(directory)
   self.path = directory
+  self.dirname = directory
+  self.directory = directory
+  self.dir = directory
   self.files = {}
   self.config_path = path(self.path, '.project.json')
-  self.config = utils.read_table(self.config_path, {
-    selector = {cmd = 'fuzzel', args = ''}
-  })
+  self.config = utils.read_table(
+    self.config_path,
+    opts.selector or {cmd = 'fuzzel', args = ''}
+  )
+  dict.merge(self.config, opts)
   self.fzf = Fzf(self.config.selector.cmd)
 
   if not path.is_git_dir(self.path) then
     printf('%s is not a git directory. Initializing git...', self.path)
     process.run(sprintf('cd %s && git init', self.path))
   end
+
+  self:find_files()
 end
 
 function Project:find_files()
@@ -64,9 +97,9 @@ function Project:grep(arguments)
   end)
 end
 
-function Project:terminal(opts)
+function Project:open_terminal(opts)
   opts = opts or {}
-  local terminal = opts.terminal or 'kitty'
+  local terminal = opts.terminal or self.config.terminal or 'kitty'
   local tmux = opts.tmux
   local cmd = ''
   local currentdir = path.getcwd()
@@ -80,6 +113,10 @@ function Project:terminal(opts)
   path.cd(self.path)
   process.run(cmd)
   path.cd(currentdir)
+end
+
+function Project:start_tmux()
+  
 end
 
 function Project:sed(pattern, sub, all)
@@ -97,8 +134,8 @@ function Project:sed(pattern, sub, all)
   process.check_output(cmd, utils.print)
 end
 
-function Project:file_browser(file_browser)
-  file_browser = file_browser or 'nautilus'
+function Project:open_file_browser(file_browser)
+  file_browser = file_browser or self.config.file_browser or 'nautilus'
   local cmd = file_browser .. ' ' .. self.path
   process.run(cmd)
 end
@@ -107,6 +144,16 @@ function Project:shell_command(cmd)
   local currentdir = path.getcwd()
   path.cd(self.path)
   process.check_output(cmd, utils.print)
+  path.cd(currentdir)
+end
+
+function Project:open_editor(opts)
+  opts = opts or {}
+  local terminal = opts.terminal or self.config.terminal or 'kitty'
+  local editor = opts.editor or self.config.editor or 'nvim'
+  local currentdir = path.getcwd()
+  path.cd(self.path)
+  process.run(sprintf('%s -e %s', terminal, editor))
   path.cd(currentdir)
 end
 

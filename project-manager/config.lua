@@ -10,18 +10,18 @@ local utils = require 'project-manager.utils'
 local home = os.getenv('HOME')
 
 ---@class GlobalProjectConfig
-local Config = class 'GlobalConfig:onfig'
+local Config = class 'GlobalProjectConfig'
 
-function Config:initialize(defaults)
+function Config:initialize()
   self.projects = {}
   self._projects = {}
   self.selector = { cmd = 'fuzzel', args = '' }
   self.write_on_append = true
   self.path = path(home, '.projects.json')
-
-  if defaults then
-    dict.merge(self, defaults)
-  end
+  self.editor = 'nvim'
+  self.terminal = 'kitty'
+  self.file_browser = 'nautilus'
+  self:read()
 end
 
 ---@param ... Project
@@ -49,36 +49,29 @@ function Config:add(directory, description, opts)
   local write_on_append = opts.write_on_append
 
   if not path.is_dir(directory) then
-    printf('Making directory: %s', directory)
-    path.fs.mkdir(directory)
+    utils.mkdir(directory)
   end
 
   if not path.is_git_dir(directory) then
-    printf('Initializing git...')
+    printf('Initializing git in directory')
     utils.git_init(directory)
   end
 
   if touch then
-    for i = 1, #touch do
-      local filename = path(directory, touch[i])
-      if not path.is_file(filename) then
-        process.run('touch ' .. filename)
-        printf('Created blank file: %s', filename)
-      end
-    end
+    utils.touch(unpack(touch))
   end
 
   if mkdir then
-    for i = 1, #mkdir do
-      local dirname = path(directory, mkdir[i])
-      if not path.is_dir(dirname) then
-        process.run('mkdir ' .. dirname)
-        printf('Created blank directory: %s', dirname)
-      end
-    end
+    utils.mkdir(unpack(mkdir))
   end
 
-  local proj = Project(directory, description)
+  local proj = Project(directory, description, {
+    editor = self.editor,
+    terminal = self.terminal,
+    file_browser = self.file_browser,
+    selector = self.selector,
+    write_on_append = self.write_on_append
+  })
   self:add_project(proj)
 
   if write_on_append then
@@ -95,6 +88,10 @@ function Config:write()
 end
 
 function Config:list(opts)
+  if dict.size(self.projects) == 0 then
+    return
+  end
+
   opts = opts or {}
   local name_only = opts.name_only
   local path_only = opts.path_only
@@ -163,17 +160,29 @@ function Config:select(fzf_opts, callback)
   callback(self._projects[choice[1]])
 end
 
-function Config:terminal(fzf_opts, opts)
+function Config:fzf_open_terminal(fzf_opts, opts)
   self:select(fzf_opts, function(proj)
-    proj:terminal(opts)
+    proj:open_terminal(opts)
   end)
 end
 
-function Config:tmux(fzf_opts, opts)
+function Config:fzf_start_tmux(fzf_opts, opts)
   self:select(fzf_opts, function(proj)
     opts = copy(opts or {})
     opts.tmux = true
-    proj:terminal(opts)
+    proj:open_terminal(opts)
+  end)
+end
+
+function Config:fzf_open_editor(fzf_opts)
+  self:select(fzf_opts, function (proj)
+    proj:open_editor()
+  end)
+end
+
+function Config:fzf_file_browser(fzf_opts)
+  self:select(fzf_opts, function (proj)
+    proj:open_file_browser()
   end)
 end
 
@@ -242,14 +251,12 @@ end
 
 function Config:read()
   if path.is_file(self.path) then
-    dict.force_merge(
-      self,
-      utils.read_table(self.path, {})
-    )
+    local config = utils.read_table(self.path, {})
+    dict.force_merge(self, config)
   end
 
   for name, spec in pairs(self.projects) do
-    self._projects[name] = Project(spec.path, spec.desc)
+    self._projects[name] = Project(spec.path, spec.desc, self)
   end
 end
 

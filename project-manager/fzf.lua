@@ -143,6 +143,7 @@ function Fzf:set(options)
   end)
   local max_opt_len = math.max(
     unpack(list.map(opts, function (o)
+      ---@diagnostic disable-next-line
       return #o
     end))
   )
