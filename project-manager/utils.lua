@@ -6,6 +6,11 @@ local path = require 'lua-utils.path_utils'
 local utils = { HOME = os.getenv("HOME") }
 local json = require 'json'
 
+function utils.print_and_exit(s, ...)
+  print(s:format(...))
+  os.exit(1)
+end
+
 function utils.print(out)
   out = out:trim()
   if #out > 0 then print(out) end

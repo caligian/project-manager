@@ -48,11 +48,8 @@ function Project:initialize(
   self.dir = directory
   self.files = {}
   self.config_path = path(self.path, '.project.json')
-  self.config = utils.read_table(
-    self.config_path,
-    opts.selector or {cmd = 'fuzzel', args = ''}
-  )
-  dict.merge(self.config, opts)
+  self.config = utils.read_table(self.config_path)
+  self.config = self.config or opts or {selector = {cmd = 'fuzzel', args = ''}}
   self.fzf = Fzf(self.config.selector.cmd)
 
   if not path.is_git_dir(self.path) then

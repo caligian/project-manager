@@ -9,6 +9,7 @@ local cmdline = {}
 local print_and_exit = Argparser.utils.print_and_exit
 
 function cmdline.parse_args(args)
+  ---@type Argparser
   local parser = Argparser("Project management utilities in lua")
 
   --- Add new projects with marker files and directories

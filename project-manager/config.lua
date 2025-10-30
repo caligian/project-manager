@@ -65,13 +65,7 @@ function Config:add(directory, description, opts)
     utils.mkdir(unpack(mkdir))
   end
 
-  local proj = Project(directory, description, {
-    editor = self.editor,
-    terminal = self.terminal,
-    file_browser = self.file_browser,
-    selector = self.selector,
-    write_on_append = self.write_on_append
-  })
+  local proj = Project(directory, description, self:as_dict())
   self:add_project(proj)
 
   if write_on_append then
@@ -82,9 +76,14 @@ function Config:add(directory, description, opts)
 end
 
 function Config:write()
-  local attribs = class.attributes(self)
-  attribs._projects = nil
-  utils.write_table(attribs, self.path)
+  utils.write_table({
+    projects = self.projects,
+    file_browser = self.file_browser,
+    editor = self.editor,
+    terminal = self.terminal,
+    selector = self.selector,
+    write_on_append = self.write_on_append,
+  }, self.path)
 end
 
 function Config:list(opts)
@@ -249,6 +248,17 @@ function Config:discover(start_dir, opts)
   return results
 end
 
+function Config:as_dict()
+  return {
+    editor = self.editor,
+    terminal = self.terminal,
+    file_browser = self.file_browser,
+    selector = self.selector,
+    write_on_append = self.write_on_append,
+    projects = self.projects
+  }
+end
+
 function Config:read()
   if path.is_file(self.path) then
     local config = utils.read_table(self.path, {})
@@ -256,7 +266,9 @@ function Config:read()
   end
 
   for name, spec in pairs(self.projects) do
-    self._projects[name] = Project(spec.path, spec.desc, self)
+    self._projects[name] = Project(
+      spec.path, spec.desc, self:as_dict()
+    )
   end
 end
 
