@@ -55,16 +55,39 @@ function Project:initialize(
   if not path.is_git_dir(self.path) then
     printf('%s is not a git directory. Initializing git...', self.path)
     process.run(sprintf('cd %s && git init', self.path))
+  else
+    self:find_files()
   end
+end
 
-  -- self:find_files()
+function Project:cd(f)
+  if f then
+    local currentdir = path.getcwd()
+    path.cd(self.path)
+    local res = {f()}
+    path.cd(currentdir)
+
+    return unpack(res)
+  else
+    path.cd(self.path)
+  end
+end
+
+function Project:exec(cmd, f)
+  self:cd(function ()
+    print('Running command: ' .. cmd)
+    process.check_output(cmd, function (out)
+      if #out == 0 then return end
+      if f then f(out) end
+    end)
+  end)
 end
 
 function Project:find_files()
-  process.check_output('git ls-files', function(out)
-    out = out:trim()
+  self:exec('git ls-files', function (out)
     self.files = string.split(out, "\n")
     self.files = list.map(self.files, string.trim)
+    self.files = list.map(path.abspath, self.files)
   end)
 end
 
@@ -75,23 +98,19 @@ function Project:ripgrep(arguments)
     'rg %s %s', arguments,
     table.concat(self.files, ' ')
   )
-  process.check_output(cmd, function(out)
-    print(out)
-  end)
+  self:exec(cmd, print)
 end
 
 Project.rg = Project.ripgrep
 
 function Project:grep(arguments)
   arguments = arguments or ''
-  arguments = arguments .. ' -Pil'
+  arguments = arguments .. ' -Piln'
   local cmd = sprintf(
     'grep %s %s', arguments,
     table.concat(self.files, ' ')
   )
-  process.check_output(cmd, function(out)
-    print(out)
-  end)
+  self:exec(cmd, print)
 end
 
 function Project:open_terminal(opts)
@@ -107,13 +126,14 @@ function Project:open_terminal(opts)
     cmd = terminal
   end
 
-  path.cd(self.path)
-  process.run(cmd)
-  path.cd(currentdir)
+  self:exec(cmd)
 end
 
-function Project:start_tmux()
-  
+function Project:start_tmux(terminal)
+  self:open_terminal {
+    tmux = true,
+    terminal = terminal
+  }
 end
 
 function Project:sed(pattern, sub, all)
@@ -128,30 +148,20 @@ function Project:sed(pattern, sub, all)
 
   files = table.concat(files, " ")
   cmd = cmd .. ' ' .. files
-  process.check_output(cmd, utils.print)
+  self:exec(cmd, print)
 end
 
 function Project:open_file_browser(file_browser)
   file_browser = file_browser or self.config.file_browser or 'nautilus'
   local cmd = file_browser .. ' ' .. self.path
-  process.run(cmd)
-end
-
-function Project:shell_command(cmd)
-  local currentdir = path.getcwd()
-  path.cd(self.path)
-  process.check_output(cmd, utils.print)
-  path.cd(currentdir)
+  self:exec(cmd)
 end
 
 function Project:open_editor(opts)
   opts = opts or {}
   local terminal = opts.terminal or self.config.terminal or 'kitty'
   local editor = opts.editor or self.config.editor or 'nvim'
-  local currentdir = path.getcwd()
-  path.cd(self.path)
-  process.run(sprintf('%s -e %s', terminal, editor))
-  path.cd(currentdir)
+  self:exec(sprintf('%s -e %s', terminal, editor))
 end
 
 return Project
