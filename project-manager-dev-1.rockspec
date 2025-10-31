@@ -22,4 +22,9 @@ build = {
     ['project-manager.project'] = 'project-manager/project.lua',
     ['project-manager.fzf'] = 'project-manager/fzf.lua',
   },
+  install = {
+    bin = {
+      ['project-manager'] = 'project-manager/cmdline.lua'
+    }
+  }
 }

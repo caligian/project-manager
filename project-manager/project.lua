@@ -57,7 +57,7 @@ function Project:initialize(
     process.run(sprintf('cd %s && git init', self.path))
   end
 
-  self:find_files()
+  -- self:find_files()
 end
 
 function Project:find_files()

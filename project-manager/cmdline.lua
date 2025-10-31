@@ -99,65 +99,63 @@ function cmdline.parse_args(args)
   return parser, parsed
 end
 
-function cmdline.run(args)
-  ---@type Argparser
-  local parser, parsed = cmdline.parse_args(args)
-  ---@type GlobalProjectConfig
-  local config = Config()
-  local kw = parsed.keyword_arguments
+---@type Argparser
+local parser, parsed = cmdline.parse_args(arg)
+---@type GlobalProjectConfig
+local config = Config()
+local kw = parsed.keyword_arguments
 
-  if dict.size(parsed.keyword_arguments) == 0 then
-    print(parser:create_inline_help())
-    print('\nNo arguments provided')
-    os.exit(1)
+if dict.size(parsed.keyword_arguments) == 0 then
+  print(parser:create_inline_help())
+  print('\nNo arguments provided')
+  os.exit(1)
+end
+
+if kw.discover or kw.discover_and_add then
+  local dir
+  local add = kw.discover_and_add ~= nil
+
+  if kw.discover then
+    dir = kw.discover[1]
+  elseif add then
+    dir = kw.discover_and_add[1]
   end
 
-  if kw.discover or kw.discover_and_add then
-    local dir
-    local add = kw.discover_and_add ~= nil
+  dir = utils.tilde2home(dir)
+  dir = dir or path.getcwd()
+  utils.assert_dir(dir)
 
-    if kw.discover then
-      dir = kw.discover[1]
-    elseif add then
-      dir = kw.discover_and_add[1]
-    end
-
-    dir = utils.tilde2home(dir)
-    dir = dir or path.getcwd()
-    utils.assert_dir(dir)
-
-    config:discover(dir, {
-      depth = kw.depth,
-      add = add
-    })
-  elseif kw.add then
-    local dir = utils.tilde2home(kw.add[1])
-    utils.assert_dir(dir)
-    config:add(dir, kw.description[1], { write_on_append = true })
-  elseif kw.list then
-    config:list {
-      name_only = kw.name_only and true,
-      path_only = kw.path_only and true,
-      realpath = kw.realpath and true
-    }
-  elseif kw.tmux then
-    config:fzf_open_terminal(kw.selector_args, {
-      tmux = true,
-      terminal = kw.tmux[1]
-    })
-  elseif kw.terminal then
-    config:fzf_open_terminal(kw.selector_args, {
-      terminal = kw.terminal[1]
-    })
-  elseif kw.editor then
-    config:fzf_open_editor(kw.selector_args)
-  elseif kw.file_browser then
-    config:fzf_file_browser(kw.selector_args)
-  else
-    parser:print_help_and_exit()
-    print()
-    print('Invalid arguments provided')
-  end
+  config:discover(dir, {
+    depth = kw.depth,
+    add = add
+  })
+elseif kw.add then
+  local dir = utils.tilde2home(kw.add[1])
+  utils.assert_dir(dir)
+  config:add(dir, kw.description[1], { write_on_append = true })
+elseif kw.list then
+  config:list {
+    name_only = kw.name_only and true,
+    path_only = kw.path_only and true,
+    realpath = kw.realpath and true
+  }
+elseif kw.tmux then
+  config:fzf_open_terminal(kw.selector_args, {
+    tmux = true,
+    terminal = kw.tmux[1]
+  })
+elseif kw.terminal then
+  config:fzf_open_terminal(kw.selector_args, {
+    terminal = kw.terminal[1]
+  })
+elseif kw.editor then
+  config:fzf_open_editor(kw.selector_args)
+elseif kw.file_browser then
+  config:fzf_file_browser(kw.selector_args)
+else
+  parser:print_help_and_exit()
+  print()
+  print('Invalid arguments provided')
 end
 
 return cmdline
