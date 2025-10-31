@@ -226,7 +226,7 @@ function Config:discover(start_dir, opts)
     local use = true
     use = include and (dir:match(include) ~= nil) or use
     use = exclude and (not dir:match(exclude)) or use
-    local display = realpath and dir:gsub(home, "~") or dir
+    local display = realpath and (dir:gsub(home, "~")) or dir
 
     if use then
       if not realpath then
