@@ -117,12 +117,12 @@ function Config:list(opts)
       if realpath then
         print(proj.path)
       else
-        print(utils.home2tilde(proj.path))
+        print((utils.home2tilde(proj.path)))
       end
     elseif realpath then
       print(proj.path)
     else
-      print(utils.home2tilde(proj.path))
+      print((utils.home2tilde(proj.path)))
     end
   end
 

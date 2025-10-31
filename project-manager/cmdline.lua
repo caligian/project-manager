@@ -135,6 +135,7 @@ elseif kw.add then
   config:add(dir, kw.description[1], { write_on_append = true })
 elseif kw.list then
   config:list {
+    short = (kw.name_only or kw.path_only) and true or false,
     name_only = kw.name_only and true,
     path_only = kw.path_only and true,
     realpath = kw.realpath and true

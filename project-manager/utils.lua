@@ -98,11 +98,11 @@ function utils.write_table(t, filename)
 end
 
 function utils.home2tilde(s)
-  return s:gsub(utils.HOME, "~")
+  return (s:gsub(utils.HOME, "~"))
 end
 
 function utils.tilde2home(s)
-  return s:gsub('~', utils.HOME)
+  return (s:gsub('~', utils.HOME))
 end
 
 function utils.assert_dir(filename)
