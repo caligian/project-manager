@@ -17,6 +17,10 @@ function cmdline.parse_args(args)
     nargs = 1,
     help = 'Add a project directory'
   })
+  parser:K('n', 'name', {
+    nargs = '?',
+    help = 'Use this name instead of directory basename'
+  })
   parser:K('d', 'description', {
     nargs = 1,
     help = 'Some description for the project'
@@ -132,7 +136,10 @@ if kw.discover or kw.discover_and_add then
 elseif kw.add then
   local dir = utils.tilde2home(kw.add[1])
   utils.assert_dir(dir)
-  config:add(dir, kw.description[1], { write_on_append = true })
+  config:add(dir, kw.description[1], {
+    write_on_append = true,
+    name = kw.name and kw.name[1]
+  })
 elseif kw.list then
   config:list {
     short = (kw.name_only or kw.path_only) and true or false,

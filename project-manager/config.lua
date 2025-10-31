@@ -33,7 +33,8 @@ function Config:add_project(...)
       desc = project.description,
       description = project.description,
       path = project.path,
-      config_path = project.config_path
+      config_path = project.config_path,
+      files = project.files
     }
   end)
 end
@@ -44,6 +45,7 @@ function Config:add(directory, description, opts)
     mkdir = {},
     write_on_append = self.write_on_append
   }
+  local name = opts.name
   local touch = opts.touch
   local mkdir = opts.mkdir
   local write_on_append = opts.write_on_append
@@ -66,6 +68,7 @@ function Config:add(directory, description, opts)
   end
 
   local proj = Project(directory, description, self:as_dict())
+  proj.name = name or proj.name
   self:add_project(proj)
 
   if write_on_append then

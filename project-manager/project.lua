@@ -55,8 +55,6 @@ function Project:initialize(
   if not path.is_git_dir(self.path) then
     printf('%s is not a git directory. Initializing git...', self.path)
     process.run(sprintf('cd %s && git init', self.path))
-  else
-    self:find_files()
   end
 end
 
@@ -75,7 +73,10 @@ end
 
 function Project:exec(cmd, f)
   self:cd(function ()
-    print('Running command: ' .. cmd)
+    printf(
+      '%-30s: %s',
+      utils.home2tilde(self.path), cmd
+    )
     process.check_output(cmd, function (out)
       if #out == 0 then return end
       if f then f(out) end
@@ -87,7 +88,7 @@ function Project:find_files()
   self:exec('git ls-files', function (out)
     self.files = string.split(out, "\n")
     self.files = list.map(self.files, string.trim)
-    self.files = list.map(path.abspath, self.files)
+    self.files = list.map(self.files, path.abspath)
   end)
 end
 
@@ -118,7 +119,6 @@ function Project:open_terminal(opts)
   local terminal = opts.terminal or self.config.terminal or 'kitty'
   local tmux = opts.tmux
   local cmd = ''
-  local currentdir = path.getcwd()
 
   if tmux then
     cmd = sprintf('%s -e tmux', terminal)
