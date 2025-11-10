@@ -53,8 +53,11 @@ function Project:initialize(
   self.fzf = Fzf(self.config.selector.cmd)
 
   if not path.is_git_dir(self.path) then
-    printf('%s is not a git directory. Initializing git...', self.path)
-    process.run(sprintf('cd %s && git init', self.path))
+    printf('%s is not a git directory.', self.path)
+    local confirm = io.read("l")
+    if confirm:match 'y' then
+      process.run(sprintf('cd %s && git init', self.path))
+    end
   end
 end
 
