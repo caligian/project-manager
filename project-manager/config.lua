@@ -270,7 +270,15 @@ function Config:read()
 
   for name, spec in pairs(self.projects) do
     self._projects[name] = Project(
-      spec.path, spec.desc, self:as_dict()
+      spec.path,
+      spec.desc,
+      {
+        editor = self.editor,
+        terminal = self.terminal,
+        file_browser = self.file_browser,
+        selector = self.selector,
+        write_on_append = self.write_on_append
+      }
     )
   end
 end
